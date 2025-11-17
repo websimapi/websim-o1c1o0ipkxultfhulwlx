@@ -89,13 +89,13 @@ export function updateAction(player, deltaTime, gameMap, allPlayers, game) {
 
             // Define the center of the tree trunk's base
             const trunkCenterX = player.actionTarget.x + 0.5;
-            const trunkCenterY = player.actionTarget.y + 0.8; // Middle of the trunk hitbox (y is 0.6 to 1.0)
+            const trunkCenterY = player.actionTarget.y + 0.75; // Center of trunk hitbox
 
             const dx = trunkCenterX - player.pixelX;
             const dy = trunkCenterY - player.pixelY;
             const dist = Math.sqrt(dx * dx + dy * dy);
 
-            const MIN_CHOP_DISTANCE = 0.5; // Approx. player radius + trunk radius
+            const MIN_CHOP_DISTANCE = 0.45; // Approx. player radius + trunk radius
 
             if (dist > MIN_CHOP_DISTANCE) {
                 // Move towards the trunk
@@ -103,8 +103,14 @@ export function updateAction(player, deltaTime, gameMap, allPlayers, game) {
                 const nextPixelX = player.pixelX + (dx / dist) * moveAmount;
                 const nextPixelY = player.pixelY + (dy / dist) * moveAmount;
 
-                // If the next move would cause a collision, just start chopping.
-                if (gameMap.isPixelColliding(nextPixelX, nextPixelY)) {
+                // Stop if the next move would cross into the chopping distance.
+                // This prevents overshooting and entering the collision zone.
+                if (dist - moveAmount < MIN_CHOP_DISTANCE) {
+                     // Place the player exactly at the chop distance limit
+                    player.pixelX = trunkCenterX - (dx / dist) * MIN_CHOP_DISTANCE;
+                    player.pixelY = trunkCenterY - (dy / dist) * MIN_CHOP_DISTANCE;
+                    beginChopping(player, gameMap, game);
+                } else if (gameMap.isPixelColliding(nextPixelX, nextPixelY)) {
                     console.log(`[${player.username}] Collided with tree while positioning, starting chop.`);
                     beginChopping(player, gameMap, game);
                 } else {

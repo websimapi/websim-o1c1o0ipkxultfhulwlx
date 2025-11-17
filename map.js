@@ -146,8 +146,6 @@ export class Map {
     isPixelColliding(pixelX, pixelY) {
         const gridX = Math.floor(pixelX);
         const gridY = Math.floor(pixelY);
-        const tileXOffset = pixelX - gridX;
-        const tileYOffset = pixelY - gridY;
     
         if (gridX < 0 || gridX >= this.width || gridY < 0 || gridY >= this.height) {
             return true;
@@ -156,16 +154,14 @@ export class Map {
         const tileType = this.grid[gridY][gridX];
     
         if (tileType === TILE_TYPE.TREE) {
-            // Hitbox: bottom 80% of tile height, centered 1/3 of tile width.
-            // This is larger than before to provide a more solid collision object.
-            const trunkHeight = 0.8;
-            const trunkWidth = 1/3;
+            // Hitbox: A circle centered on the trunk.
+            const { trunkX, trunkY } = this.getTrunkCenter(gridX, gridY);
+            const trunkRadius = 0.25; // A radius of 1/4 of a tile.
 
-            const trunkYStart = 1.0 - trunkHeight; // Starts at 0.2
-            const trunkXStart = 0.5 - (trunkWidth / 2); // Starts at ~0.333
-            const trunkXEnd = 0.5 + (trunkWidth / 2);   // Ends at ~0.667
-
-            return tileYOffset >= trunkYStart && tileXOffset >= trunkXStart && tileXOffset <= trunkXEnd;
+            const dx = pixelX - trunkX;
+            const dy = pixelY - trunkY;
+            
+            return (dx * dx + dy * dy) < (trunkRadius * trunkRadius);
         }
     
         return false; // Only trees have special collision for now

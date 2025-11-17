@@ -28,29 +28,33 @@ export function findAndMoveToTree(player, gameMap) {
         let bestPath = null;
         let minPathLength = Infinity;
 
-        // Find best path to an adjacent spot
-        for(let dx = -1; dx <= 1; dx++) {
-            for(let dy = -1; dy <= 1; dy++) {
-                if(dx === 0 && dy === 0) continue;
+        // Find best path to an adjacent spot, checking up to 2 tiles away
+        for (let r = 1; r <= 2; r++) {
+            for (let dx = -r; dx <= r; dx++) {
+                for (let dy = -r; dy <= r; dy++) {
+                    // Only check the perimeter of the square radius
+                    if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue;
 
-                const spotX = treeCoords.x + dx;
-                const spotY = treeCoords.y + dy;
+                    const spotX = treeCoords.x + dx;
+                    const spotY = treeCoords.y + dy;
 
-                if (spotX < 0 || spotX >= gameMap.width || spotY < 0 || spotY >= gameMap.height) {
-                    continue;
-                }
+                    if (spotX < 0 || spotX >= gameMap.width || spotY < 0 || spotY >= gameMap.height) {
+                        continue;
+                    }
 
-                if(!gameMap.isCollidingForPathfinding(spotX, spotY)) {
-                    const startX = Math.round(player.pixelX);
-                    const startY = Math.round(player.pixelY);
-                    const path = findPath(startX, startY, spotX, spotY, gameMap);
+                    if(!gameMap.isCollidingForPathfinding(spotX, spotY)) {
+                        const startX = Math.round(player.pixelX);
+                        const startY = Math.round(player.pixelY);
+                        const path = findPath(startX, startY, spotX, spotY, gameMap);
 
-                    if (path && path.length < minPathLength) {
-                        minPathLength = path.length;
-                        bestPath = path;
+                        if (path && path.length < minPathLength) {
+                            minPathLength = path.length;
+                            bestPath = path;
+                        }
                     }
                 }
             }
+            if (bestPath) break; // Found a path, no need to check a larger radius
         }
         
         if(bestPath) {
