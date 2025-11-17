@@ -45,6 +45,65 @@ function findNearestEmptySpot(gridX, gridY, gameMap) {
     return { x: 0, y: 0 }; // Fallback to origin
 }
 
+function resolveCollision(player, gameMap) {
+    let resolved = false;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 16;
+    const PUSH_AMOUNT = 0.05;
+
+    while (gameMap.isPixelColliding(player.pixelX, player.pixelY) && attempts < MAX_ATTEMPTS) {
+        let pushX = 0;
+        let pushY = 0;
+
+        // Determine a push direction away from the tree trunk center
+        const gridX = Math.floor(player.pixelX);
+        const gridY = Math.floor(player.pixelY);
+        const trunkCenterX = gridX + 0.5;
+        const trunkCenterY = gridY + 0.8; // Approx center of trunk hitbox
+
+        const dx = player.pixelX - trunkCenterX;
+        const dy = player.pixelY - trunkCenterY;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+
+        if (dist > 0.01) {
+            pushX = (dx / dist) * PUSH_AMOUNT;
+            pushY = (dy / dist) * PUSH_AMOUNT;
+        } else {
+            // If directly on top, push in a random direction
+            const randomAngle = Math.random() * 2 * Math.PI;
+            pushX = Math.cos(randomAngle) * PUSH_AMOUNT;
+            pushY = Math.sin(randomAngle) * PUSH_AMOUNT;
+        }
+
+        player.pixelX += pushX;
+        player.pixelY += pushY;
+        
+        resolved = true;
+        attempts++;
+    }
+
+    if(resolved) {
+        console.warn(`[${player.username}] Nudged out of obstacle.`);
+        // Stop current movement to prevent re-entering obstacle
+        player.path = [];
+        player.targetX = player.pixelX;
+        player.targetY = player.pixelY;
+    } else if (attempts >= MAX_ATTEMPTS) {
+        // Fallback to teleport if nudging fails
+        console.error(`[${player.username}] Could not nudge player out of obstacle. Teleporting to safety.`);
+        const currentGridX = Math.round(player.pixelX);
+        const currentGridY = Math.round(player.pixelY);
+        const newPos = findNearestEmptySpot(currentGridX, currentGridY, gameMap);
+        player.pixelX = newPos.x;
+        player.pixelY = newPos.y;
+        player.targetX = newPos.x;
+        player.targetY = newPos.y;
+        player.path = [];
+        player.state = PLAYER_STATE.IDLE;
+    }
+    return resolved;
+}
+
 export class Player {
     constructor(id, username, color, gameSettings) {
         this.id = id;
@@ -313,9 +372,18 @@ export class Player {
         
         // Apply separation from other players to prevent overlap
         applySeparation(this, allPlayers, gameMap);
+
+        // Use pixel-based collision for nudging, which is more precise.
+        if (gameMap.isPixelColliding(this.pixelX, this.pixelY)) {
+            if(resolveCollision(this, gameMap)) {
+                return; // Collision was resolved, skip rest of update for this frame
+            }
+        }
         
+        // This is a broader, grid-based check for being stuck in a non-traversable tile (e.g. from loading a save).
+        // This is more of a fallback and should rarely trigger with the new nudge logic.
         if (gameMap.isColliding(currentGridX, currentGridY)) {
-            console.warn(`[${this.username}] Detected player stuck in an obstacle at (${currentGridX}, ${currentGridY}). Moving to safety.`);
+            console.warn(`[${this.username}] Detected player stuck in an obstacle tile at (${currentGridX}, ${currentGridY}). Moving to safety.`);
             const newPos = findNearestEmptySpot(currentGridX, currentGridY, gameMap);
             this.pixelX = newPos.x;
             this.pixelY = newPos.y;

@@ -136,10 +136,10 @@ export class Map {
         const tileType = this.grid[gridY][gridX];
     
         if (tileType === TILE_TYPE.TREE) {
-            // Collision only on the bottom 40% of the tile (the trunk)
-            // and the middle 20% horizontally.
-            const inTrunkY = tileYOffset > 0.6;
-            const inTrunkX = tileXOffset > 0.4 && tileXOffset < 0.6;
+            // Collision only on the bottom 30% of the tile (the trunk)
+            // and the middle 30% horizontally.
+            const inTrunkY = tileYOffset > 0.7;
+            const inTrunkX = tileXOffset > 0.35 && tileXOffset < 0.65;
             return inTrunkY && inTrunkX;
         }
     
