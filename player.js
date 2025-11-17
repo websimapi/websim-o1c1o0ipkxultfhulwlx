@@ -377,22 +377,6 @@ export class Player {
             }
         }
         
-        // This is a broader, grid-based check for being stuck in a non-traversable tile (e.g. from loading a save).
-        // This is more of a fallback and should rarely trigger with the new nudge logic.
-        const currentGridX = Math.round(this.pixelX);
-        const currentGridY = Math.round(this.pixelY);
-        if (gameMap.isColliding(currentGridX, currentGridY)) {
-            console.warn(`[${this.username}] Detected player stuck in an obstacle tile at (${currentGridX}, ${currentGridY}). Moving to safety.`);
-            const newPos = findNearestEmptySpot(currentGridX, currentGridY, gameMap);
-            this.pixelX = newPos.x;
-            this.pixelY = newPos.y;
-            this.targetX = newPos.x;
-            this.targetY = newPos.y;
-            this.path = [];
-            this.state = PLAYER_STATE.IDLE;
-            return; // Skip the rest of the update for this frame
-        }
-        
         if (this.isPowered()) {
             const hadPower = this.energy.update(deltaTime);
             
