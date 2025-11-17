@@ -367,9 +367,6 @@ export class Player {
     }
 
     update(deltaTime, gameMap, allPlayers, game) {
-        const currentGridX = Math.round(this.pixelX);
-        const currentGridY = Math.round(this.pixelY);
-        
         // Apply separation from other players to prevent overlap
         applySeparation(this, allPlayers, gameMap);
 
@@ -382,6 +379,8 @@ export class Player {
         
         // This is a broader, grid-based check for being stuck in a non-traversable tile (e.g. from loading a save).
         // This is more of a fallback and should rarely trigger with the new nudge logic.
+        const currentGridX = Math.round(this.pixelX);
+        const currentGridY = Math.round(this.pixelY);
         if (gameMap.isColliding(currentGridX, currentGridY)) {
             console.warn(`[${this.username}] Detected player stuck in an obstacle tile at (${currentGridX}, ${currentGridY}). Moving to safety.`);
             const newPos = findNearestEmptySpot(currentGridX, currentGridY, gameMap);

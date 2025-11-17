@@ -22,8 +22,10 @@ export function updateFollowPath(player, deltaTime, gameMap) {
              player.pixelX = nextPixelX;
              player.pixelY = nextPixelY;
         } else if (dist <= 0.01) {
-            player.pixelX = Math.round(player.pixelX);
-            player.pixelY = Math.round(player.pixelY);
+            // Don't snap here. Let the state machine handle final positioning.
+            // This prevents snapping into an obstacle tile.
+            // player.pixelX = Math.round(player.pixelX);
+            // player.pixelY = Math.round(player.pixelY);
         }
         return;
     }
