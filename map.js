@@ -164,9 +164,7 @@ export class Map {
             const trunkXStart = 0.5 - (trunkWidth / 2); // Starts at 0.375
             const trunkXEnd = 0.5 + (trunkWidth / 2);   // Ends at 0.625
 
-            const inTrunkY = tileYOffset > trunkYStart;
-            const inTrunkX = tileXOffset > trunkXStart && tileXOffset < trunkXEnd;
-            return inTrunkY && inTrunkX;
+            return tileYOffset >= trunkYStart && tileXOffset >= trunkXStart && tileXOffset <= trunkXEnd;
         }
     
         return false; // Only trees have special collision for now

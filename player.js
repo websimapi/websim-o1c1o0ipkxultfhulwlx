@@ -88,6 +88,11 @@ function resolveCollision(player, gameMap) {
         player.path = [];
         player.targetX = player.pixelX;
         player.targetY = player.pixelY;
+        // If the player was trying to get to the tree, this might put them in a state
+        // where they can begin their action.
+        if (player.state === PLAYER_STATE.POSITIONING_TO_CHOP) {
+            player.state = PLAYER_STATE.IDLE; // Let the updater re-evaluate. A bit of a reset.
+        }
     } else if (attempts >= MAX_ATTEMPTS) {
         // Fallback to teleport if nudging fails
         console.error(`[${player.username}] Could not nudge player out of obstacle. Teleporting to safety.`);
@@ -370,13 +375,6 @@ export class Player {
         // Apply separation from other players to prevent overlap
         applySeparation(this, allPlayers, gameMap);
 
-        // Use pixel-based collision for nudging, which is more precise.
-        if (gameMap.isPixelColliding(this.pixelX, this.pixelY)) {
-            if(resolveCollision(this, gameMap)) {
-                return; // Collision was resolved, skip rest of update for this frame
-            }
-        }
-        
         if (this.isPowered()) {
             const hadPower = this.energy.update(deltaTime);
             
@@ -399,7 +397,12 @@ export class Player {
 
             // State Machine for actions
             updateAction(this, deltaTime, gameMap, allPlayers, game);
+        }
 
+        // Use pixel-based collision for nudging, which is more precise.
+        // This is now done AFTER movement calculation for the frame.
+        if (gameMap.isPixelColliding(this.pixelX, this.pixelY)) {
+            resolveCollision(this, gameMap);
         }
     }
 
