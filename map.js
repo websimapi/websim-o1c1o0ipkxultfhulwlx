@@ -156,13 +156,13 @@ export class Map {
         const tileType = this.grid[gridY][gridX];
     
         if (tileType === TILE_TYPE.TREE) {
-            // Hitbox: bottom 1/2 of tile height, centered 1/8 of tile width.
+            // Hitbox: bottom 1/2 of tile height, centered 1/4 of tile width.
             const trunkHeight = 0.5; // Bottom half
-            const trunkWidth = 1/8;   // Centered 1/8
+            const trunkWidth = 1/4;   // Centered 1/4
 
             const trunkYStart = 1.0 - trunkHeight; // Starts at 0.5
-            const trunkXStart = 0.5 - (trunkWidth / 2); // Starts at 0.4375
-            const trunkXEnd = 0.5 + (trunkWidth / 2);   // Ends at 0.5625
+            const trunkXStart = 0.5 - (trunkWidth / 2); // Starts at 0.375
+            const trunkXEnd = 0.5 + (trunkWidth / 2);   // Ends at 0.625
 
             const inTrunkY = tileYOffset > trunkYStart;
             const inTrunkX = tileXOffset > trunkXStart && tileXOffset < trunkXEnd;
