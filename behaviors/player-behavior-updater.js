@@ -44,7 +44,7 @@ function treeHasBeenChopped(player, gameMap, allPlayers) {
         player.state = PLAYER_STATE.MOVING_TO_LOGS;
     } else {
         console.warn(`[${player.username}] No path found to logs from cooperative chop. Trying bushes.`);
-        harvestNextBush(player, gameMap, game); // game isn't available here, this could be an issue. Let's pass it.
+        harvestNextBush(player, gameMap, game);
     }
 }
 
