@@ -100,8 +100,17 @@ export function updateAction(player, deltaTime, gameMap, allPlayers, game) {
             if (dist > MIN_CHOP_DISTANCE) {
                 // Move towards the trunk
                 const moveAmount = player.speed * deltaTime;
-                player.pixelX += (dx / dist) * moveAmount;
-                player.pixelY += (dy / dist) * moveAmount;
+                const nextPixelX = player.pixelX + (dx / dist) * moveAmount;
+                const nextPixelY = player.pixelY + (dy / dist) * moveAmount;
+
+                // If the next move would cause a collision, just start chopping.
+                if (gameMap.isPixelColliding(nextPixelX, nextPixelY)) {
+                    console.log(`[${player.username}] Collided with tree while positioning, starting chop.`);
+                    beginChopping(player, gameMap, game);
+                } else {
+                    player.pixelX = nextPixelX;
+                    player.pixelY = nextPixelY;
+                }
             } else {
                 // Close enough, start chopping
                 beginChopping(player, gameMap, game);
