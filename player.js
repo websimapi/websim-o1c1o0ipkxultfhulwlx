@@ -51,6 +51,7 @@ function resolveCollision(player, gameMap) {
     const MAX_ATTEMPTS = 16;
     const PUSH_AMOUNT = 0.05;
 
+    // Use a while loop to ensure the player is fully out of collision
     while (gameMap.isPixelColliding(player.pixelX, player.pixelY) && attempts < MAX_ATTEMPTS) {
         // Determine a push direction away from the tree trunk center
         const gridX = Math.floor(player.pixelX);
@@ -314,6 +315,7 @@ export class Player {
 
         const stateToTileType = {
             [PLAYER_STATE.MOVING_TO_TREE]: TILE_TYPE.TREE,
+            [PLAYER_STATE.POSITIONING_TO_CHOP]: TILE_TYPE.TREE,
             [PLAYER_STATE.CHOPPING]: TILE_TYPE.TREE,
             [PLAYER_STATE.MOVING_TO_LOGS]: TILE_TYPE.LOGS,
             [PLAYER_STATE.HARVESTING_LOGS]: TILE_TYPE.LOGS,
@@ -352,7 +354,24 @@ export class Player {
                     console.log(`[${this.username}] Re-calculating path for state ${this.state}.`);
                     const startX = Math.round(this.pixelX);
                     const startY = Math.round(this.pixelY);
-                    const path = findPath(startX, startY, this.actionTarget.x, this.actionTarget.y, gameMap);
+                    
+                    let endX = this.actionTarget.x;
+                    let endY = this.actionTarget.y;
+                    
+                    if(this.state === PLAYER_STATE.MOVING_TO_TREE) {
+                        // For trees, we path to an adjacent spot, not the tree itself.
+                        // Since we don't know which adjacent spot was originally chosen,
+                        // we can't perfectly reconstruct the path.
+                        // Let's reset the state and let it re-path from scratch.
+                        console.warn(`[${this.username}] Cannot reliably reconstruct path to tree on load. Restarting chopping cycle.`);
+                        this.state = PLAYER_STATE.IDLE;
+                        this.activeCommand = 'chop'; // Re-initiate the command
+                        this.actionTarget = null;
+                        this.path = [];
+                        return;
+                    }
+
+                    const path = findPath(startX, startY, endX, endY, gameMap);
                     if (path) {
                         this.path = path;
                     } else {
@@ -372,25 +391,33 @@ export class Player {
 
         // Use pixel-based collision for nudging, which is more precise.
         if (gameMap.isPixelColliding(this.pixelX, this.pixelY)) {
+            // resolveCollision will try to nudge the player out. If it succeeds,
+            // it returns true, and we can skip the rest of the update for this frame.
             if(resolveCollision(this, gameMap)) {
-                return; // Collision was resolved, skip rest of update for this frame
+                return;
             }
         }
         
-        // This is a broader, grid-based check for being stuck in a non-traversable tile (e.g. from loading a save).
-        // This is more of a fallback and should rarely trigger with the new nudge logic.
+        // This is a broader, grid-based check for being stuck in a non-traversable tile.
+        // It's a fallback and should only trigger if nudging fails or in edge cases from loading a save.
         const currentGridX = Math.round(this.pixelX);
         const currentGridY = Math.round(this.pixelY);
+
         if (gameMap.isColliding(currentGridX, currentGridY)) {
-            console.warn(`[${this.username}] Detected player stuck in an obstacle tile at (${currentGridX}, ${currentGridY}). Moving to safety.`);
-            const newPos = findNearestEmptySpot(currentGridX, currentGridY, gameMap);
-            this.pixelX = newPos.x;
-            this.pixelY = newPos.y;
-            this.targetX = newPos.x;
-            this.targetY = newPos.y;
-            this.path = [];
-            this.state = PLAYER_STATE.IDLE;
-            return; // Skip the rest of the update for this frame
+            // Before teleporting, do one last check. A player can be at (10.4, 10.4) which rounds to (10,10),
+            // but their visual position is clearly not on the tree trunk at (11, 10).
+            // Only teleport if their *pixel* position is also colliding.
+            if (gameMap.isPixelColliding(this.pixelX, this.pixelY)) {
+                 console.warn(`[${this.username}] Detected player stuck in an obstacle tile at (${currentGridX}, ${currentGridY}) after nudge failed. Moving to safety.`);
+                const newPos = findNearestEmptySpot(currentGridX, currentGridY, gameMap);
+                this.pixelX = newPos.x;
+                this.pixelY = newPos.y;
+                this.targetX = newPos.x;
+                this.targetY = newPos.y;
+                this.path = [];
+                this.state = PLAYER_STATE.IDLE;
+                return; // Skip the rest of the update for this frame
+            }
         }
         
         if (this.isPowered()) {
