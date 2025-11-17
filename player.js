@@ -293,7 +293,7 @@ export class Player {
         if (
             currentGridX < 0 || currentGridX >= gameMap.width ||
             currentGridY < 0 || currentGridY >= gameMap.height ||
-            gameMap.isCollidingForPathfinding(currentGridX, currentGridY)
+            gameMap.isColliding(currentGridX, currentGridY)
         ) {
             console.warn(`[${this.username}] Invalid or occupied position on load (${this.pixelX.toFixed(2)}, ${this.pixelY.toFixed(2)}). Finding nearest empty spot.`);
             
@@ -381,7 +381,7 @@ export class Player {
         // This is more of a fallback and should rarely trigger with the new nudge logic.
         const currentGridX = Math.round(this.pixelX);
         const currentGridY = Math.round(this.pixelY);
-        if (gameMap.isCollidingForPathfinding(currentGridX, currentGridY)) {
+        if (gameMap.isColliding(currentGridX, currentGridY)) {
             console.warn(`[${this.username}] Detected player stuck in an obstacle tile at (${currentGridX}, ${currentGridY}). Moving to safety.`);
             const newPos = findNearestEmptySpot(currentGridX, currentGridY, gameMap);
             this.pixelX = newPos.x;

@@ -119,7 +119,7 @@ export class Map {
             return true; 
         }
         
-        // 1 means Tree/Obstacle. For pathfinding, the whole tile is an obstacle.
+        // Tree is a collision for pathfinding and general checks.
         return this.grid[gridY][gridX] === TILE_TYPE.TREE;
     }
 
@@ -127,17 +127,13 @@ export class Map {
         if (gridX < 0 || gridX >= this.width || gridY < 0 || gridY >= this.height) {
             return Infinity; // Impassable
         }
-        const tileType = this.grid[gridY][gridX];
-        if (tileType === TILE_TYPE.TREE) {
-            return 5; // Higher cost to discourage pathing through trees
-        }
+        // Cost is now uniform, collision is handled separately.
         return 1; // Normal cost
     }
 
     isCollidingForPathfinding(gridX, gridY) {
-        // A tile is an obstacle for pathfinding only if it's out of bounds.
-        // Trees are not obstacles here, they just have a higher cost.
-        return gridX < 0 || gridX >= this.width || gridY < 0 || gridY >= this.height;
+        // A tile is an obstacle for pathfinding if it's out of bounds or a tree.
+        return gridX < 0 || gridX >= this.width || gridY < 0 || gridY >= this.height || this.grid[gridY][gridX] === TILE_TYPE.TREE;
     }
 
     getTrunkCenter(gridX, gridY) {
