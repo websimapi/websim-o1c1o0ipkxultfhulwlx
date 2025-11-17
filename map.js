@@ -139,7 +139,7 @@ export class Map {
     getTrunkCenter(gridX, gridY) {
         // Consistent calculation of the trunk's center for collision and steering
         const trunkCenterX = gridX + 0.5;
-        const trunkCenterY = gridY + 0.8;
+        const trunkCenterY = gridY + 0.75; // Center of the bottom half of the tile (the trunk hitbox)
         return { trunkX: trunkCenterX, trunkY: trunkCenterY };
     }
 
@@ -156,10 +156,16 @@ export class Map {
         const tileType = this.grid[gridY][gridX];
     
         if (tileType === TILE_TYPE.TREE) {
-            // Collision only on the bottom 40% of the tile (the trunk)
-            // and the middle 30% horizontally.
-            const inTrunkY = tileYOffset > 0.6;
-            const inTrunkX = tileXOffset > 0.35 && tileXOffset < 0.65;
+            // Hitbox: bottom 1/2 of tile height, centered 1/8 of tile width.
+            const trunkHeight = 0.5; // Bottom half
+            const trunkWidth = 1/8;   // Centered 1/8
+
+            const trunkYStart = 1.0 - trunkHeight; // Starts at 0.5
+            const trunkXStart = 0.5 - (trunkWidth / 2); // Starts at 0.4375
+            const trunkXEnd = 0.5 + (trunkWidth / 2);   // Ends at 0.5625
+
+            const inTrunkY = tileYOffset > trunkYStart;
+            const inTrunkX = tileXOffset > trunkXStart && tileXOffset < trunkXEnd;
             return inTrunkY && inTrunkX;
         }
     
