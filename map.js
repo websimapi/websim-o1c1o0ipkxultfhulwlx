@@ -123,6 +123,30 @@ export class Map {
         return this.grid[gridY][gridX] === TILE_TYPE.TREE;
     }
 
+    getTileCost(gridX, gridY) {
+        if (gridX < 0 || gridX >= this.width || gridY < 0 || gridY >= this.height) {
+            return Infinity; // Impassable
+        }
+        const tileType = this.grid[gridY][gridX];
+        if (tileType === TILE_TYPE.TREE) {
+            return 5; // Higher cost to discourage pathing through trees
+        }
+        return 1; // Normal cost
+    }
+
+    isCollidingForPathfinding(gridX, gridY) {
+        // A tile is an obstacle for pathfinding only if it's out of bounds.
+        // Trees are not obstacles here, they just have a higher cost.
+        return gridX < 0 || gridX >= this.width || gridY < 0 || gridY >= this.height;
+    }
+
+    getTrunkCenter(gridX, gridY) {
+        // Consistent calculation of the trunk's center for collision and steering
+        const trunkCenterX = gridX + 0.5;
+        const trunkCenterY = gridY + 0.8;
+        return { trunkX: trunkCenterX, trunkY: trunkCenterY };
+    }
+
     isPixelColliding(pixelX, pixelY) {
         const gridX = Math.floor(pixelX);
         const gridY = Math.floor(pixelY);
@@ -136,9 +160,9 @@ export class Map {
         const tileType = this.grid[gridY][gridX];
     
         if (tileType === TILE_TYPE.TREE) {
-            // Collision only on the bottom 30% of the tile (the trunk)
+            // Collision only on the bottom 40% of the tile (the trunk)
             // and the middle 30% horizontally.
-            const inTrunkY = tileYOffset > 0.7;
+            const inTrunkY = tileYOffset > 0.6;
             const inTrunkX = tileXOffset > 0.35 && tileXOffset < 0.65;
             return inTrunkY && inTrunkX;
         }

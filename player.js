@@ -14,7 +14,7 @@ import { applySeparation } from './player-movement.js';
 export const ENERGY_DURATION_MS = 3600 * 1000; // This will now be controlled by settings
 
 function findNearestEmptySpot(gridX, gridY, gameMap) {
-    if (!gameMap.isColliding(gridX, gridY)) {
+    if (!gameMap.isCollidingForPathfinding(gridX, gridY)) {
         return { x: gridX, y: gridY };
     }
 
@@ -32,7 +32,7 @@ function findNearestEmptySpot(gridX, gridY, gameMap) {
                 const newY = gridY + j;
 
                 if (newX >= 0 && newX < gameMap.width && newY >= 0 && newY < gameMap.height) {
-                    if (!gameMap.isColliding(newX, newY)) {
+                    if (!gameMap.isCollidingForPathfinding(newX, newY)) {
                         return { x: newX, y: newY };
                     }
                 }
@@ -52,18 +52,18 @@ function resolveCollision(player, gameMap) {
     const PUSH_AMOUNT = 0.05;
 
     while (gameMap.isPixelColliding(player.pixelX, player.pixelY) && attempts < MAX_ATTEMPTS) {
-        let pushX = 0;
-        let pushY = 0;
-
         // Determine a push direction away from the tree trunk center
         const gridX = Math.floor(player.pixelX);
         const gridY = Math.floor(player.pixelY);
-        const trunkCenterX = gridX + 0.5;
-        const trunkCenterY = gridY + 0.8; // Approx center of trunk hitbox
+        
+        // Find center of trunk hitbox
+        const { trunkX, trunkY } = gameMap.getTrunkCenter(gridX, gridY);
 
-        const dx = player.pixelX - trunkCenterX;
-        const dy = player.pixelY - trunkCenterY;
+        const dx = player.pixelX - trunkX;
+        const dy = player.pixelY - trunkY;
         const dist = Math.sqrt(dx*dx + dy*dy);
+
+        let pushX, pushY;
 
         if (dist > 0.01) {
             pushX = (dx / dist) * PUSH_AMOUNT;
@@ -293,7 +293,7 @@ export class Player {
         if (
             currentGridX < 0 || currentGridX >= gameMap.width ||
             currentGridY < 0 || currentGridY >= gameMap.height ||
-            gameMap.isColliding(currentGridX, currentGridY)
+            gameMap.isCollidingForPathfinding(currentGridX, currentGridY)
         ) {
             console.warn(`[${this.username}] Invalid or occupied position on load (${this.pixelX.toFixed(2)}, ${this.pixelY.toFixed(2)}). Finding nearest empty spot.`);
             
@@ -381,7 +381,7 @@ export class Player {
         // This is more of a fallback and should rarely trigger with the new nudge logic.
         const currentGridX = Math.round(this.pixelX);
         const currentGridY = Math.round(this.pixelY);
-        if (gameMap.isColliding(currentGridX, currentGridY)) {
+        if (gameMap.isCollidingForPathfinding(currentGridX, currentGridY)) {
             console.warn(`[${this.username}] Detected player stuck in an obstacle tile at (${currentGridX}, ${currentGridY}). Moving to safety.`);
             const newPos = findNearestEmptySpot(currentGridX, currentGridY, gameMap);
             this.pixelX = newPos.x;

@@ -44,7 +44,8 @@ function findPath(startX, startY, endX, endY, map) {
             const dx = neighbor.x - currentX;
             const dy = neighbor.y - currentY;
             const distance = Math.sqrt(dx*dx + dy*dy); // 1 for cardinal, sqrt(2) for diagonal
-            const tentativeGScore = gScore.get(current) + distance;
+            const tileCost = map.getTileCost(neighbor.x, neighbor.y);
+            const tentativeGScore = gScore.get(current) + (distance * tileCost);
 
             if (!openSet.has(neighborNode)) {
                 openSet.add(neighborNode);
@@ -83,12 +84,12 @@ function getNeighbors(x, y, map) {
         const newX = x + dir.dx;
         const newY = y + dir.dy;
 
-        if (newX >= 0 && newX < map.width && newY >= 0 && newY < map.height && !map.isColliding(newX, newY)) {
+        if (newX >= 0 && newX < map.width && newY >= 0 && newY < map.height && !map.isCollidingForPathfinding(newX, newY)) {
             // Allow diagonal movement even if one of the adjacent cardinal tiles is blocked.
             // This allows "hugging" corners.
             if (dir.dx !== 0 && dir.dy !== 0) { // It's a diagonal move
-                const isObstacleX = map.isColliding(x + dir.dx, y);
-                const isObstacleY = map.isColliding(x, y + dir.dy);
+                const isObstacleX = map.isCollidingForPathfinding(x + dir.dx, y);
+                const isObstacleY = map.isCollidingForPathfinding(x, y + dir.dy);
                 // Only block diagonal if BOTH adjacent tiles that form the corner are obstacles.
                 if (!isObstacleX || !isObstacleY) {
                     neighbors.push({ x: newX, y: newY });

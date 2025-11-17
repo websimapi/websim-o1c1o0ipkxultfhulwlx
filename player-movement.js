@@ -63,20 +63,55 @@ export function updateMoveToTarget(player, deltaTime, gameMap) {
         const moveX = (dx / dist) * moveAmount;
         const moveY = (dy / dist) * moveAmount;
 
-        const nextPixelX = player.pixelX + moveX;
-        const nextPixelY = player.pixelY + moveY;
+        let nextPixelX = player.pixelX + moveX;
+        let nextPixelY = player.pixelY + moveY;
 
-        if (!gameMap.isPixelColliding(nextPixelX, nextPixelY)) {
-            player.pixelX = nextPixelX;
-            player.pixelY = nextPixelY;
-        } else {
-            // If full move is blocked, try moving only on one axis
-            if (!gameMap.isPixelColliding(nextPixelX, player.pixelY)) {
-                player.pixelX = nextPixelX;
-            } else if (!gameMap.isPixelColliding(player.pixelX, nextPixelY)) {
-                player.pixelY = nextPixelY;
+        // --- Local Steering ---
+        if (gameMap.isPixelColliding(nextPixelX, nextPixelY)) {
+            const gridX = Math.floor(nextPixelX);
+            const gridY = Math.floor(nextPixelY);
+
+            // Get trunk center to steer around it
+            const { trunkX, trunkY } = gameMap.getTrunkCenter(gridX, gridY);
+            
+            // Vector from trunk center to player's current position
+            const playerToTrunkX = player.pixelX - trunkX;
+            const playerToTrunkY = player.pixelY - trunkY;
+            
+            // Calculate perpendicular vector (for sliding)
+            let slideX = -playerToTrunkY;
+            let slideY = playerToTrunkX;
+            
+            // Normalize the slide vector
+            const slideMag = Math.sqrt(slideX * slideX + slideY * slideY);
+            if (slideMag > 0) {
+                slideX /= slideMag;
+                slideY /= slideMag;
+            }
+
+            // Project the original movement vector onto the slide vector
+            const dotProduct = moveX * slideX + moveY * slideY;
+            
+            // New movement is along the slide direction
+            const steeredMoveX = slideX * dotProduct;
+            const steeredMoveY = slideY * dotProduct;
+
+            const steeredNextPixelX = player.pixelX + steeredMoveX;
+            const steeredNextPixelY = player.pixelY + steeredMoveY;
+            
+            // Only apply steering if it doesn't lead into another collision
+            if (!gameMap.isPixelColliding(steeredNextPixelX, steeredNextPixelY)) {
+                nextPixelX = steeredNextPixelX;
+                nextPixelY = steeredNextPixelY;
+            } else {
+                 // Fallback: If steering also collides, just stop for this frame
+                 return;
             }
         }
+
+        player.pixelX = nextPixelX;
+        player.pixelY = nextPixelY;
+
     } else {
         player.pixelX = player.targetX;
         player.pixelY = player.targetY;

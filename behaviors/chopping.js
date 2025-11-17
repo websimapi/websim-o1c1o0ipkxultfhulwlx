@@ -40,7 +40,7 @@ export function findAndMoveToTree(player, gameMap) {
                     continue;
                 }
 
-                if(!gameMap.isColliding(spotX, spotY)) {
+                if(!gameMap.isCollidingForPathfinding(spotX, spotY)) {
                     const startX = Math.round(player.pixelX);
                     const startY = Math.round(player.pixelY);
                     const path = findPath(startX, startY, spotX, spotY, gameMap);
